@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MinuteFlow | Meeting Minutes</title>
+  <style>
+    :root { --ink:#253340; --muted:#6d7a86; --line:#dfe6e9; --paper:#fff; --ground:#f5f7f7; --navy:#405d70; --navy-dark:#314b5c; --sage:#6f8978; --soft:#edf3f1; --danger:#a54c4c; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--ground); color:var(--ink); font-family:Inter, "Segoe UI", Arial, sans-serif; line-height:1.5; }
+    button, input, textarea { font:inherit; }
+    button { cursor:pointer; }
+    .shell { width:min(1100px, calc(100% - 40px)); margin:auto; }
+    header { height:140px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+    footer { border-top:1px solid var(--line); padding:20px 0 30px; color:var(--muted); text-align:center; font-size:13px; }
+    .brand-logo { display:block; width:310px; height:126px; margin-left:-79px; object-fit:contain; object-position:left center; mix-blend-mode:multiply; opacity:1; }
+    .quiet-button { color:var(--navy-dark); border:1px solid #cad6dc; border-radius:8px; padding:10px 15px; background:var(--paper); font-size:14px; font-weight:600; letter-spacing:.1px; box-shadow:0 1px 2px rgba(37,51,64,.05); transition:background .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .quiet-button:hover { background:var(--soft); border-color:#aebfc8; box-shadow:0 3px 8px rgba(37,51,64,.09); }
+    .quiet-button:focus-visible { outline:3px solid rgba(64,93,112,.18); outline-offset:2px; }
+    main { padding:56px 0 72px; }
+    .intro { max-width:650px; margin-bottom:32px; }
+    h1 { font-size:clamp(30px, 5vw, 43px); letter-spacing:-1.4px; line-height:1.1; margin:0 0 13px; }
+    .intro p { color:var(--muted); margin:0; font-size:17px; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:28px; box-shadow:0 8px 26px rgba(37,51,64,.045); }
+    .step { display:flex; gap:12px; align-items:center; margin-bottom:20px; font-weight:650; font-size:16px; }
+    .step span { display:grid; place-items:center; width:25px; height:25px; color:var(--navy); background:var(--soft); border-radius:50%; font-size:13px; }
+    .fields { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .field.full { grid-column:1 / -1; }
+    label { display:block; margin-bottom:7px; font-size:14px; font-weight:600; }
+    .hint { color:var(--muted); font-weight:400; }
+    input, textarea { width:100%; border:1px solid #cfd9de; border-radius:8px; padding:11px 12px; color:var(--ink); background:#fff; outline:none; }
+    input:focus, textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(64,93,112,.12); }
+    textarea { resize:vertical; min-height:78px; }
+    .upload-zone { margin-top:24px; padding:31px 20px; border:1.5px dashed #bfcdd0; border-radius:12px; background:#fbfcfc; text-align:center; transition:.18s ease; }
+    .upload-zone.drag { border-color:var(--navy); background:var(--soft); }
+    .upload-icon { color:var(--sage); font-size:26px; line-height:1; }
+    .upload-zone h2 { margin:9px 0 4px; font-size:17px; }
+    .upload-zone p { color:var(--muted); margin:0 0 15px; font-size:14px; }
+    .file-button, .primary { border:0; color:white; background:var(--navy); border-radius:8px; padding:10px 16px; font-weight:600; }
+    .file-button:hover, .primary:hover { background:var(--navy-dark); }
+    #fileInput { display:none; }
+    .file-info { display:none; align-items:center; justify-content:space-between; margin-top:15px; padding:11px 13px; background:var(--soft); border-radius:8px; font-size:14px; }
+    .file-info.show { display:flex; }
+    .remove { border:0; background:transparent; color:var(--danger); font-weight:600; }
+    .action-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:24px; }
+    .limit { color:var(--muted); font-size:13px; }
+    .primary { padding:12px 20px; min-width:185px; }
+    .primary:disabled { background:#9aa8b0; cursor:not-allowed; }
+    .status, .results { display:none; margin-top:25px; }
+    .status.show, .results.show { display:block; }
+    .status { padding:19px; border:1px solid #d9e5df; background:var(--soft); border-radius:11px; }
+    .status strong { display:block; margin-bottom:8px; }
+    .bar { height:5px; overflow:hidden; background:#d8e4de; border-radius:999px; }
+    .bar::after { content:""; display:block; width:38%; height:100%; background:var(--sage); border-radius:inherit; animation:loading 1.15s infinite ease-in-out; }
+    @keyframes loading { 0%{transform:translateX(-110%)} 100%{transform:translateX(290%)} }
+    .error { display:none; margin-top:17px; color:#862f2f; background:#fbefef; border:1px solid #efd0d0; padding:12px; border-radius:8px; font-size:14px; }
+    .error.show { display:block; }
+    .results-head { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
+    .results h2 { margin:0; font-size:23px; letter-spacing:-.4px; }
+    .download { text-decoration:none; display:inline-block; color:white; background:var(--sage); padding:10px 14px; border-radius:8px; font-size:14px; font-weight:600; }
+    .minutes { white-space:pre-wrap; border-top:1px solid var(--line); padding-top:20px; color:#34424c; }
+    details { margin-top:16px; border-top:1px solid var(--line); padding-top:16px; color:var(--muted); }
+    summary { cursor:pointer; color:var(--navy); font-weight:600; }
+    .transcript { white-space:pre-wrap; max-height:250px; overflow:auto; margin-top:12px; font-size:14px; }
+    .modal-layer { position:fixed; inset:0; display:grid; place-items:center; padding:20px; background:rgba(27,41,49,.37); z-index:10; }
+    .modal { width:min(500px, 100%); background:var(--paper); border-radius:15px; padding:30px; box-shadow:0 20px 55px rgba(20,33,40,.22); }
+    .modal h2 { margin:0 0 8px; font-size:25px; letter-spacing:-.5px; }
+    .modal > p { margin:0 0 19px; color:var(--muted); }
+    .instructions { margin:0 0 22px; padding-left:21px; color:#4d5c66; font-size:14px; }
+    .instructions li { margin:5px 0; }
+    .key-row { display:flex; gap:8px; }
+    .key-row input { min-width:0; }
+    .toggle { flex:0 0 auto; color:var(--navy); background:#fff; border:1px solid #cfd9de; border-radius:8px; padding:0 11px; font-size:13px; }
+    .privacy { font-size:12px; color:var(--muted); margin:13px 0 0; }
+    @media (max-width:650px) { .shell { width:min(100% - 28px, 1100px); } header { height:106px; } .brand-logo { width:230px; height:94px; margin-left:-59px; } .quiet-button { padding:8px 10px; font-size:13px; } main { padding-top:35px; } .card { padding:20px; } .fields { grid-template-columns:1fr; } .field.full { grid-column:auto; } .action-row, .results-head { align-items:stretch; flex-direction:column; } .primary, .download { text-align:center; } }
+  </style>
+</head>
+<body>
+  <div class="modal-layer" id="apiModal" role="dialog" aria-modal="true" aria-labelledby="apiTitle">
+    <section class="modal">
+      <h2 id="apiTitle">Connect your Groq account</h2>
+      <p>Add your own API key to create meeting minutes. It is kept only while this page is open.</p>
+      <ol class="instructions">
+        <li>Go to <strong>console.groq.com/keys</strong> and sign in.</li>
+        <li>Create a new API key.</li>
+        <li>Copy it and paste it below.</li>
+      </ol>
+      <label for="apiKey">Groq API key</label>
+      <div class="key-row"><input id="apiKey" type="password" autocomplete="off" placeholder="gsk_..." /><button class="toggle" type="button" id="toggleKey">Show</button></div>
+      <div class="error" id="keyError">Enter your Groq API key to continue.</div>
+      <button class="primary" style="margin-top:20px;width:100%" type="button" id="saveKey">Continue securely</button>
+      <p class="privacy">Your API key is not saved in local storage or sent anywhere except the MOM-generation request.</p>
+    </section>
+  </div>
+
+  <div class="shell">
+    <header><img class="brand-logo" src="/assets/sumo-logo.jpg" alt="SUMO powered by DataPattern" /><button class="quiet-button" id="changeKey" type="button">Change API key</button></header>
+    <main>
+      <section class="intro"><h1>Turn conversations into clear meeting minutes.</h1><p>Upload a meeting recording and receive structured, downloadable minutes in a few moments.</p></section>
+      <section class="card">
+        <div class="step"><span>1</span> Meeting details</div>
+        <div class="fields">
+          <div class="field"><label for="title">Meeting title <span class="hint">(optional)</span></label><input id="title" placeholder="e.g. Weekly Product Sync" /></div>
+          <div class="field"><label for="date">Meeting date</label><input id="date" type="date" /></div>
+          <div class="field full"><label for="attendees">Attendees / members</label><input id="attendees" placeholder="e.g. Asha Patel, Ravi Kumar, Neha Shah" /></div>
+          <div class="field full"><label for="agenda">Agenda or purpose <span class="hint">(optional)</span></label><textarea id="agenda" placeholder="What was this meeting about?"></textarea></div>
+        </div>
+        <div class="step" style="margin-top:29px"><span>2</span> Upload recording</div>
+        <div class="upload-zone" id="dropZone"><div class="upload-icon">↥</div><h2>Drag and drop your recording here</h2><p>Audio or video files are supported.</p><label class="file-button" for="fileInput">Choose a file</label><input id="fileInput" type="file" accept="audio/*,video/*,.m4a,.webm" /></div>
+        <div class="file-info" id="fileInfo"><span id="fileName"></span><button type="button" class="remove" id="removeFile">Remove</button></div>
+        <div class="action-row"><span class="limit">Maximum upload size: 2 GB</span><button class="primary" id="generate" type="button">Generate minutes</button></div>
+        <div class="error" id="requestError"></div>
+        <div class="status" id="status"><strong id="statusText">Preparing your recording…</strong><div class="bar"></div></div>
+      </section>
+      <section class="card results" id="results"><div class="results-head"><h2>Your meeting minutes</h2><div style="display:flex;gap:9px;flex-wrap:wrap"><a class="download" id="downloadTranscript" href="#" download="meeting-transcript.txt">Download transcript</a><a class="download" id="download" href="#">Download DOCX</a></div></div><article class="minutes" id="minutes"></article></section>
+    </main>
+  </div>
+  <script>
+    let apiKey = '', selectedFile = null;
+    const $ = id => document.getElementById(id);
+    $('date').value = new Date().toISOString().slice(0, 10);
+    function showModal() { $('apiModal').style.display = 'grid'; $('apiKey').value = ''; $('apiKey').focus(); }
+    function setFile(file) { selectedFile = file || null; $('fileInfo').classList.toggle('show', !!file); $('fileName').textContent = file ? `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB` : ''; }
+    $('saveKey').onclick = () => { const value = $('apiKey').value.trim(); if (!value) return $('keyError').classList.add('show'); apiKey = value; $('keyError').classList.remove('show'); $('apiModal').style.display = 'none'; };
+    $('changeKey').onclick = showModal;
+    $('toggleKey').onclick = () => { const hidden = $('apiKey').type === 'password'; $('apiKey').type = hidden ? 'text' : 'password'; $('toggleKey').textContent = hidden ? 'Hide' : 'Show'; };
+    $('fileInput').onchange = e => setFile(e.target.files[0]);
+    $('removeFile').onclick = () => { $('fileInput').value = ''; setFile(null); };
+    const zone = $('dropZone');
+    ['dragenter','dragover'].forEach(event => zone.addEventListener(event, e => { e.preventDefault(); zone.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(event => zone.addEventListener(event, e => { e.preventDefault(); zone.classList.remove('drag'); }));
+    zone.addEventListener('drop', e => { const file = e.dataTransfer.files[0]; if (file) { $('fileInput').files = e.dataTransfer.files; setFile(file); } });
+    $('generate').onclick = async () => {
+      const error = $('requestError'); error.classList.remove('show');
+      if (!apiKey) return showModal();
+      if (!selectedFile) { error.textContent = 'Choose an audio or video recording first.'; return error.classList.add('show'); }
+      if (selectedFile.size > 2 * 1024 * 1024 * 1024) { error.textContent = 'This file is larger than the 2 GB upload limit.'; return error.classList.add('show'); }
+      const form = new FormData(); form.append('file', selectedFile); form.append('meeting_date', $('date').value); form.append('attendees', $('attendees').value || 'Not specified');
+      // Sent for a backend that supports per-request Groq keys. The current backend must be updated to read this field.
+      form.append('api_key', apiKey); form.append('meeting_title', $('title').value); form.append('agenda', $('agenda').value);
+      $('generate').disabled = true; $('status').classList.add('show'); $('results').classList.remove('show');
+      try {
+        const response = await fetch('/api/generate-mom', { method:'POST', body:form });
+        const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to generate meeting minutes.');
+        $('minutes').textContent = data.meetingMinutes; $('download').href = data.downloadUrl;
+        const transcriptFile = new Blob([data.transcript], { type: 'text/plain;charset=utf-8' });
+        const transcriptUrl = URL.createObjectURL(transcriptFile);
+        const meetingName = ($('title').value.trim() || selectedFile.name.replace(/\.[^.]+$/, '') || 'meeting').replace(/[^a-z0-9-_ ]/gi, '');
+        $('downloadTranscript').href = transcriptUrl; $('downloadTranscript').download = `${meetingName}_transcript.txt`;
+        $('results').classList.add('show'); $('results').scrollIntoView({ behavior:'smooth', block:'start' });
+      } catch (err) { error.textContent = err.message; error.classList.add('show'); }
+      finally { $('generate').disabled = false; $('status').classList.remove('show'); }
+    };
+  </script>
+</body>
+</html>

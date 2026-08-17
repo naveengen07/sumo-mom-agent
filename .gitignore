@@ -1,0 +1,6 @@
+.env
+google_drive_token.json
+.venv/
+__pycache__/
+*.py[cod]
+outputs/

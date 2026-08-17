@@ -115,9 +115,13 @@
       <section class="card results" id="results"><div class="results-head"><h2>Your meeting minutes</h2><div style="display:flex;gap:9px;flex-wrap:wrap"><a class="download" id="downloadTranscript" href="#" download="meeting-transcript.txt">Download transcript</a><a class="download" id="download" href="#">Download DOCX</a></div></div><article class="minutes" id="minutes"></article></section>
     </main>
   </div>
+  <script src="/config.js"></script>
   <script>
     let apiKey = '', selectedFile = null;
     const $ = id => document.getElementById(id);
+    const apiBaseUrl = (window.MOM_API_BASE_URL || '').replace(/\/+$/, '');
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const apiUrl = path => /^https?:\/\//i.test(path) ? path : `${apiBaseUrl}${path}`;
     $('date').value = new Date().toISOString().slice(0, 10);
     function showModal() { $('apiModal').style.display = 'grid'; $('apiKey').value = ''; $('apiKey').focus(); }
     function setFile(file) { selectedFile = file || null; $('fileInfo').classList.toggle('show', !!file); $('fileName').textContent = file ? `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB` : ''; }
@@ -135,18 +139,18 @@
       if (!apiKey) return showModal();
       if (!selectedFile) { error.textContent = 'Choose an audio or video recording first.'; return error.classList.add('show'); }
       if (selectedFile.size > 2 * 1024 * 1024 * 1024) { error.textContent = 'This file is larger than the 2 GB upload limit.'; return error.classList.add('show'); }
+      if (!isLocalHost && !apiBaseUrl) { error.textContent = 'The production API URL has not been configured. Set MOM_API_BASE_URL in /public/config.js.'; return error.classList.add('show'); }
       const form = new FormData(); form.append('file', selectedFile); form.append('meeting_date', $('date').value); form.append('attendees', $('attendees').value || 'Not specified');
       // Sent for a backend that supports per-request Groq keys. The current backend must be updated to read this field.
       form.append('api_key', apiKey); form.append('meeting_title', $('title').value); form.append('agenda', $('agenda').value);
-      $('generate').disabled = true; $('status').classList.add('show'); $('results').classList.remove('show');
+      $('generate').disabled = true; $('statusText').textContent = 'Preparing your recording…'; $('status').classList.add('show'); $('results').classList.remove('show');
       try {
-        const response = await fetch('/api/generate-mom', { method:'POST', body:form });
-        const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to generate meeting minutes.');
-        $('minutes').textContent = data.meetingMinutes; $('download').href = data.downloadUrl;
-        const transcriptFile = new Blob([data.transcript], { type: 'text/plain;charset=utf-8' });
-        const transcriptUrl = URL.createObjectURL(transcriptFile);
+        $('statusText').textContent = 'Uploading, transcribing, and creating minutes…';
+        const response = await fetch(apiUrl('/api/generate-mom'), { method:'POST', body:form });
+        const data = await response.json().catch(() => ({ error: `Request failed (${response.status} ${response.statusText}).` })); if (!response.ok) throw new Error(data.error || 'Unable to generate meeting minutes.');
+        $('minutes').textContent = data.meetingMinutes; $('download').href = apiUrl(data.downloadUrl);
         const meetingName = ($('title').value.trim() || selectedFile.name.replace(/\.[^.]+$/, '') || 'meeting').replace(/[^a-z0-9-_ ]/gi, '');
-        $('downloadTranscript').href = transcriptUrl; $('downloadTranscript').download = `${meetingName}_transcript.txt`;
+        $('downloadTranscript').href = apiUrl(data.transcriptDownloadUrl); $('downloadTranscript').download = `${meetingName}_transcript.txt`;
         $('results').classList.add('show'); $('results').scrollIntoView({ behavior:'smooth', block:'start' });
       } catch (err) { error.textContent = err.message; error.classList.add('show'); }
       finally { $('generate').disabled = false; $('status').classList.remove('show'); }

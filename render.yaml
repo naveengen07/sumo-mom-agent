@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: sumo-mom-api
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeploy: true

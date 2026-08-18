@@ -119,8 +119,10 @@
   <script>
     let apiKey = '', selectedFile = null;
     const $ = id => document.getElementById(id);
-    const apiBaseUrl = (window.MOM_API_BASE_URL || '').replace(/\/+$/, '');
     const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    // Use the Flask server that served the page during local development.
+    // The configured URL is only for the separately hosted production frontend.
+    const apiBaseUrl = isLocalHost ? '' : (window.MOM_API_BASE_URL || '').replace(/\/+$/, '');
     const apiUrl = path => /^https?:\/\//i.test(path) ? path : `${apiBaseUrl}${path}`;
     $('date').value = new Date().toISOString().slice(0, 10);
     function showModal() { $('apiModal').style.display = 'grid'; $('apiKey').value = ''; $('apiKey').focus(); }

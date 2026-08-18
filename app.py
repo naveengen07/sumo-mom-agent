@@ -187,7 +187,9 @@ Action Plan
 
 Include the meeting date and attendees under Meeting Details. Write 4-6 concise, factual bullet points under Meeting Notes. List only action items actually mentioned, with owners and deadlines where available. Do not invent facts. Do not use Markdown heading markers such as # or ##."""
     completion = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        # Groq retired Llama 3.3 70B on August 16, 2026. Keep this
+        # configurable so the service can be switched without a code change.
+        model=os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-120b"),
         messages=[
             {"role": "system", "content": "You create concise, structured meeting minutes grounded only in the transcript."},
             {"role": "user", "content": prompt},
